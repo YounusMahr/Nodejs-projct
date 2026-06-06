@@ -1,0 +1,53 @@
+name: SyncBoard MERN CI/CD Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "${{ secrets.HOSTINGER_SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Copy project files to VPS
+        run: |
+          # Rsync project directories (excluding node_modules and builds)
+          rsync -avz --delete \
+            --exclude='node_modules' \
+            --exclude='client/node_modules' \
+            --exclude='client/dist' \
+            --exclude='.git' \
+            --exclude='.env' \
+            ./ ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }}:/var/www/syncboard/
+
+      - name: Deploy application on VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_SSH_HOST }}
+          username: ${{ secrets.HOSTINGER_SSH_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          script: |
+            cd /var/www/syncboard
+            
+            # Inject environment secrets
+            echo "MONGO_URI=${{ secrets.MONGO_URI }}" > server/.env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> server/.env
+            echo "PORT=5000" >> server/.env
+            
+            # Build and start Docker containers
+            docker compose down
+            docker compose up --build -d
+            
+            # Clean up dangling images
+            docker image prune -f

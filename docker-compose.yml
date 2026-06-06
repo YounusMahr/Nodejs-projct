@@ -1,0 +1,22 @@
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: task-manager-server
+    env_file:
+      - ./server/.env
+    expose:
+      - 5000
+    restart: always
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: task-manager-client
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    restart: always
