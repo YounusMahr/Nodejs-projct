@@ -16,9 +16,9 @@ jobs:
       - name: Setup SSH Key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.AWS_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H "${{ secrets.HOSTINGER_SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "${{ secrets.AWS_SSH_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Copy project files to VPS
         run: |
@@ -29,16 +29,16 @@ jobs:
             --exclude='client/dist' \
             --exclude='.git' \
             --exclude='.env' \
-            ./ ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }}:/var/www/syncboard/
+            ./ ${{ secrets.AWS_SSH_USER }}@${{ secrets.AWS_SSH_HOST }}:/home/ubuntu/syncboard/
 
       - name: Deploy application on VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.HOSTINGER_SSH_HOST }}
-          username: ${{ secrets.HOSTINGER_SSH_USER }}
-          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          host: ${{ secrets.AWS_SSH_HOST }}
+          username: ${{ secrets.AWS_SSH_USER }}
+          key: ${{ secrets.AWS_SSH_KEY }}
           script: |
-            cd /var/www/syncboard
+            cd /home/ubuntu/syncboard
             
             # Inject environment secrets
             echo "MONGO_URI=${{ secrets.MONGO_URI }}" > server/.env
