@@ -21,15 +21,7 @@ jobs:
           ssh-keyscan -H "${{ secrets.AWS_SSH_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Copy project files to VPS
-        run: |
-          # Rsync project directories (excluding node_modules and builds)
-          rsync -avz --delete \
-            --exclude='node_modules' \
-            --exclude='client/node_modules' \
-            --exclude='client/dist' \
-            --exclude='.git' \
-            --exclude='.env' \
-            ./ ${{ secrets.AWS_SSH_USER }}@${{ secrets.AWS_SSH_HOST }}:/home/ubuntu/syncboard/
+        run: rsync -avz --delete --exclude='node_modules' --exclude='client/node_modules' --exclude='client/dist' --exclude='.git' --exclude='.env' ./ ${{ secrets.AWS_SSH_USER }}@${{ secrets.AWS_SSH_HOST }}:/home/ubuntu/syncboard/
 
       - name: Deploy application on VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
